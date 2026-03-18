@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smoke Free Quest</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #0a0a0f;
+            color: #e8e8f0;
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: #0d0d15;
+            border: 1px solid #1a1a2e;
+            border-radius: 16px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .logo .icon { font-size: 48px; }
+
+        .logo h1 {
+            font-size: 22px;
+            letter-spacing: 2px;
+            margin-top: 8px;
+        }
+
+        .logo p {
+            color: #555;
+            font-size: 11px;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: #666;
+            font-size: 10px;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            background: #111118;
+            border: 1px solid #222;
+            border-radius: 8px;
+            padding: 12px;
+            color: #e8e8f0;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            border-color: #ff6b35;
+        }
+
+        .slider-value {
+            color: #ff6b35;
+            font-weight: bold;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: #ff6b35;
+            margin-top: 4px;
+        }
+
+        .daily-cost {
+            background: #111118;
+            border: 1px solid #ff6b3522;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .daily-cost p {
+            color: #888;
+            font-size: 10px;
+            letter-spacing: 1px;
+        }
+
+        .daily-cost span {
+            color: #ffd60a;
+            font-size: 24px;
+            font-weight: bold;
+            display: block;
+            margin-top: 4px;
+        }
+
+        button {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #ff6b35, #ff9500);
+            border: none;
+            border-radius: 10px;
+            color: #000;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            letter-spacing: 1px;
+            font-family: 'Courier New', monospace;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .error {
+            color: #ff4444;
+            font-size: 12px;
+            text-align: center;
+            margin-top: 12px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="logo">
+        <div class="icon">🎮</div>
+        <h1>SMOKE FREE QUEST</h1>
+        <p>YOUR QUIT SMOKING RPG</p>
+    </div>
+
+    <div class="form-group">
+        <label>YOUR HERO NAME</label>
+        <input type="text" id="name" placeholder="Enter your name..." />
+    </div>
+
+    <div class="form-group">
+        <label>
+            CIGARETTES PER DAY: 
+            <span class="slider-value" id="cigsVal">10</span>
+        </label>
+        <input type="range" id="cigsPerDay" min="1" max="60" value="10"
+            oninput="updateSlider('cigsVal', this.value); updateCost()" />
+    </div>
+
+    <div class="form-group">
+        <label>
+            PRICE PER PACK (₹): 
+            <span class="slider-value" id="priceVal">200</span>
+        </label>
+        <input type="range" id="pricePerPack" min="50" max="1000" 
+            step="10" value="200"
+            oninput="updateSlider('priceVal', this.value); updateCost()" />
+    </div>
+
+    <div class="form-group">
+        <label>
+            CIGARETTES PER PACK: 
+            <span class="slider-value" id="packVal">20</span>
+        </label>
+        <input type="range" id="cigsPerPack" min="10" max="25" value="20"
+            oninput="updateSlider('packVal', this.value); updateCost()" />
+    </div>
+
+    <div class="daily-cost">
+        <p>DAILY BURN RATE</p>
+        <span id="dailyCost">₹100</span>
+    </div>
+
+    <button onclick="startQuest()">🚀 BEGIN YOUR QUEST</button>
+    <p class="error" id="errorMsg">Please enter your name!</p>
+</div>
+
+<script>
+    function updateSlider(id, value) {
+        document.getElementById(id).textContent = value;
+    }
+
+    function updateCost() {
+        const cigs = parseInt(document.getElementById('cigsPerDay').value);
+        const price = parseInt(document.getElementById('pricePerPack').value);
+        const perPack = parseInt(document.getElementById('cigsPerPack').value);
+        const daily = ((cigs / perPack) * price).toFixed(0);
+        document.getElementById('dailyCost').textContent = '₹' + daily;
+    }
+
+    async function startQuest() {
+        const name = document.getElementById('name').value.trim();
+
+        // Validate name
+        if (!name) {
+            document.getElementById('errorMsg').style.display = 'block';
+            return;
+        }
+
+        const player = {
+            name: name,
+            cigsPerDay: parseInt(document.getElementById('cigsPerDay').value),
+            pricePerPack: parseInt(document.getElementById('pricePerPack').value),
+            cigsPerPack: parseInt(document.getElementById('cigsPerPack').value)
+        };
+
+        try {
+            // Call your Spring Boot backend
+            const response = await fetch('/api/player', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(player)
+            });
+
+            const saved = await response.json();
+
+            // Save the player ID in browser storage
+            localStorage.setItem('playerId', saved.id);
+
+            // Go to dashboard
+            window.location.href = '/dashboard.html';
+
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById('errorMsg').textContent = 'Something went wrong!';
+            document.getElementById('errorMsg').style.display = 'block';
+        }
+    }
+
+    // Set initial cost on load
+    updateCost();
+</script>
+
+</body>
+</html>

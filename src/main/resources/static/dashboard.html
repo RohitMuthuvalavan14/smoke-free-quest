@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smoke Free Quest - Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #0a0a0f;
+            color: #e8e8f0;
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* HEADER */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .header .name { font-size: 18px; font-weight: bold; }
+        .header .level { color: #ff6b35; font-size: 13px; font-weight: bold; }
+        .header .xp { color: #888; font-size: 11px; }
+
+        /* XP BAR */
+        .xp-bar-container {
+            margin-bottom: 20px;
+        }
+
+        .xp-bar-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .xp-bar {
+            height: 6px;
+            background: #1a1a2e;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .xp-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b3588, #ff6b35);
+            border-radius: 3px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        /* STAT CARDS */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: #111118;
+            border: 1px solid #1a1a2e;
+            border-radius: 12px;
+            padding: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #ff6b35, transparent);
+        }
+
+        .stat-icon { font-size: 18px; margin-bottom: 4px; }
+        .stat-value { font-size: 22px; font-weight: bold; color: #ff6b35; }
+        .stat-label { font-size: 9px; color: #555; letter-spacing: 1px; margin-top: 2px; }
+
+        /* TABS */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            background: transparent;
+            border: 1px solid #222;
+            border-radius: 8px;
+            color: #555;
+            font-size: 10px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+        }
+
+        .tab.active {
+            background: #ff6b3522;
+            border-color: #ff6b35;
+            color: #ff6b35;
+        }
+
+        /* TAB PANELS */
+        .panel { display: none; }
+        .panel.active { display: block; }
+
+        /* CRAVING PANEL */
+        .craving-box {
+            background: #1a0a0a;
+            border: 1px solid #ff444433;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .craving-box p {
+            color: #aaa;
+            font-size: 12px;
+            margin-bottom: 16px;
+        }
+
+        .craving-btn {
+            background: linear-gradient(135deg, #ff4444, #ff6b35);
+            border: none;
+            border-radius: 10px;
+            padding: 14px 32px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+        }
+
+        .craving-count {
+            color: #ff4444;
+            font-size: 13px;
+            margin-top: 12px;
+        }
+
+        /* ACHIEVEMENTS PANEL */
+        .achievements-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .achievement-card {
+            background: #0d0d12;
+            border: 1px solid #1a1a2e;
+            border-radius: 12px;
+            padding: 14px;
+            opacity: 0.4;
+        }
+
+        .achievement-card.unlocked {
+            opacity: 1;
+            border-color: #ff6b3544;
+            background: linear-gradient(135deg, #0d0d1a, #1a0d1a);
+        }
+
+        .achievement-icon { font-size: 28px; margin-bottom: 6px; }
+        .achievement-title { font-size: 12px; font-weight: bold; }
+        .achievement-desc { font-size: 10px; color: #555; margin-top: 4px; line-height: 1.4; }
+        .achievement-xp { font-size: 10px; color: #ff6b35; margin-top: 6px; }
+
+        /* SUCCESS MESSAGE */
+        .toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a1a2e;
+            border: 1px solid #ff6b35;
+            border-radius: 20px;
+            padding: 10px 20px;
+            font-size: 13px;
+            color: #ff6b35;
+            display: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <div class="header">
+        <div>
+            <div class="name" id="playerName">Hero</div>
+            <div class="xp" id="xpText">0 XP</div>
+        </div>
+        <div style="text-align:right">
+            <div class="level" id="levelName">LVL 1 · Ignition</div>
+        </div>
+    </div>
+
+    <!-- XP BAR -->
+    <div class="xp-bar-container">
+        <div class="xp-bar-labels">
+            <span id="xpLeft">XP 0</span>
+            <span id="xpRight">100 to next level</span>
+        </div>
+        <div class="xp-bar">
+            <div class="xp-bar-fill" id="xpFill"></div>
+        </div>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">⏱️</div>
+            <div class="stat-value" id="timeFree">0m</div>
+            <div class="stat-label">FREE TIME</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">💰</div>
+            <div class="stat-value" id="moneySaved">₹0</div>
+            <div class="stat-label">MONEY SAVED</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🚫</div>
+            <div class="stat-value" id="cigsAvoided">0</div>
+            <div class="stat-label">CIGS AVOIDED</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">⚔️</div>
+            <div class="stat-value" id="cravingsDefeated">0</div>
+            <div class="stat-label">CRAVINGS DEFEATED</div>
+        </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+        <button class="tab active" onclick="switchTab('quest')">🗺️ QUEST</button>
+        <button class="tab" onclick="switchTab('achievements')">🏅 AWARDS</button>
+    </div>
+
+    <!-- QUEST PANEL -->
+    <div class="panel active" id="panel-quest">
+        <div class="craving-box">
+            <p>Having a craving? Battle it and earn XP!</p>
+            <button class="craving-btn" onclick="fightCraving()">
+                ⚔️ FIGHT THE CRAVING
+            </button>
+            <div class="craving-count" id="cravingCount"></div>
+        </div>
+    </div>
+
+    <!-- ACHIEVEMENTS PANEL -->
+    <div class="panel" id="panel-achievements">
+        <div class="achievements-grid" id="achievementsGrid">
+            <!-- filled by JS -->
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div class="toast" id="toast"></div>
+
+<script>
+    const LEVELS = [
+        { level: 1, name: "Ignition",     xpRequired: 0    },
+        { level: 2, name: "Smoke Signal", xpRequired: 100  },
+        { level: 3, name: "Clearing Air", xpRequired: 300  },
+        { level: 4, name: "Fresh Breeze", xpRequired: 600  },
+        { level: 5, name: "Clean Lungs",  xpRequired: 1000 },
+        { level: 6, name: "Iron Will",    xpRequired: 1500 },
+        { level: 7, name: "Life Reborn",  xpRequired: 2500 },
+        { level: 8, name: "Legend",       xpRequired: 4000 },
+    ];
+
+    const ALL_ACHIEVEMENTS = [
+        { id: "FIRST_HOUR",  icon: "⚡", title: "First Hour",     xp: 20  },
+        { id: "FIRST_DAY",   icon: "🌅", title: "Dawn Breaker",   xp: 50  },
+        { id: "THREE_DAYS",  icon: "🔥", title: "Triple Threat",  xp: 100 },
+        { id: "ONE_WEEK",    icon: "🛡️", title: "Week Warrior",   xp: 200 },
+        { id: "TWO_WEEKS",   icon: "💪", title: "Iron Lung",      xp: 300 },
+        { id: "ONE_MONTH",   icon: "🏆", title: "30-Day Legend",  xp: 500 },
+        { id: "CRAVING_5",   icon: "⚔️", title: "Craving Slayer", xp: 75  },
+        { id: "CRAVING_20",  icon: "🗡️", title: "Craving Hunter", xp: 150 },
+        { id: "MONEY_50",    icon: "💰", title: "Pocket Saver",   xp: 80  },
+        { id: "MONEY_200",   icon: "💎", title: "Treasure Hunter",xp: 200 },
+    ];
+
+    const playerId = localStorage.getItem('playerId');
+
+    // Redirect to setup if no player
+    if (!playerId) {
+        window.location.href = '/index.html';
+    }
+
+    function formatTime(minutes) {
+        if (minutes < 60) return `${minutes}m`;
+        if (minutes < 1440) return `${Math.floor(minutes/60)}h ${minutes%60}m`;
+        const days = Math.floor(minutes / 1440);
+        const hours = Math.floor((minutes % 1440) / 60);
+        return `${days}d ${hours}h`;
+    }
+
+    function getLevel(xp) {
+        let current = LEVELS[0];
+        for (let i = LEVELS.length - 1; i >= 0; i--) {
+            if (xp >= LEVELS[i].xpRequired) { current = LEVELS[i]; break; }
+        }
+        return current;
+    }
+
+    function getNextLevel(xp) {
+        for (let i = 0; i < LEVELS.length; i++) {
+            if (xp < LEVELS[i].xpRequired) return LEVELS[i];
+        }
+        return null;
+    }
+
+    // Fetch stats from backend every 5 seconds
+    async function fetchStats() {
+        try {
+            const res = await fetch(`/api/player/${playerId}/stats`);
+            const stats = await res.json();
+
+            // Update stat cards
+            document.getElementById('timeFree').textContent =
+                formatTime(stats.minutesFree);
+            document.getElementById('moneySaved').textContent =
+                '₹' + stats.moneySaved.toFixed(2);
+            document.getElementById('cigsAvoided').textContent =
+                stats.cigsAvoided;
+            document.getElementById('xpText').textContent =
+                stats.xp + ' XP';
+
+            // Update level
+            const level = getLevel(stats.xp);
+            const nextLevel = getNextLevel(stats.xp);
+            document.getElementById('levelName').textContent =
+                `LVL ${level.level} · ${level.name}`;
+
+            // Update XP bar
+            if (nextLevel) {
+                const progress = ((stats.xp - level.xpRequired) /
+                    (nextLevel.xpRequired - level.xpRequired)) * 100;
+                document.getElementById('xpFill').style.width = progress + '%';
+                document.getElementById('xpLeft').textContent =
+                    'XP ' + (stats.xp - level.xpRequired);
+                document.getElementById('xpRight').textContent =
+                    (nextLevel.xpRequired - level.xpRequired) + ' to ' + nextLevel.name;
+            }
+
+        } catch (err) {
+            console.error('Stats fetch failed:', err);
+        }
+    }
+
+    // Fetch player name
+    async function fetchPlayer() {
+        const res = await fetch(`/api/player/${playerId}`);
+        const player = await res.json();
+        document.getElementById('playerName').textContent = player.name;
+    }
+
+    // Fetch achievements
+    async function fetchAchievements() {
+        const res = await fetch(`/api/player/${playerId}/achievements`);
+        const unlocked = await res.json();
+        const unlockedTitles = unlocked.map(a => a.title);
+
+        const grid = document.getElementById('achievementsGrid');
+        grid.innerHTML = '';
+
+        ALL_ACHIEVEMENTS.forEach(ach => {
+            const isUnlocked = unlockedTitles.includes(ach.title);
+            grid.innerHTML += `
+                <div class="achievement-card ${isUnlocked ? 'unlocked' : ''}">
+                    <div class="achievement-icon">
+                        ${isUnlocked ? ach.icon : '🔒'}
+                    </div>
+                    <div class="achievement-title">${ach.title}</div>
+                    <div class="achievement-xp">+${ach.xp} XP</div>
+                </div>
+            `;
+        });
+
+        // Update cravings defeated count
+        const cravingAch = unlocked.find(a => a.title === "Craving Slayer");
+        document.getElementById('cravingsDefeated').textContent =
+            cravingAch ? '5+' : '0';
+    }
+
+    // Fight a craving
+    async function fightCraving() {
+        try {
+            // Log the craving
+            const res = await fetch(`/api/player/${playerId}/craving`, {
+                method: 'POST'
+            });
+            const craving = await res.json();
+
+            // Immediately defeat it (in real app this would be after a timer)
+            await fetch(`/api/player/${playerId}/craving/${craving.id}/defeat`, {
+                method: 'PUT'
+            });
+
+            showToast('⚔️ Craving Defeated! +15 XP');
+            fetchStats();
+            fetchAchievements();
+
+        } catch (err) {
+            console.error('Craving error:', err);
+        }
+    }
+
+    function switchTab(tab) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        document.getElementById('panel-' + tab).classList.add('active');
+        event.target.classList.add('active');
+        if (tab === 'achievements') fetchAchievements();
+    }
+
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.style.display = 'block';
+        setTimeout(() => toast.style.display = 'none', 2500);
+    }
+
+    // Start everything
+    fetchPlayer();
+    fetchStats();
+    setInterval(fetchStats, 5000);
+</script>
+
+</body>
+</html>
